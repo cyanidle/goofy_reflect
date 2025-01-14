@@ -25,19 +25,19 @@ struct Reflect {
     static constexpr auto info = _infer(static_cast<T*>(0), ITag<(N > count ? count : N)>{});
 };
 
-template<typename...Args>
-constexpr int bases_count = (0 + ... + Reflect<Args>::count);
+template<typename...Ts>
+constexpr int bases_count = (0 + ... + Reflect<Ts>::count);
 
-#define INTERFACE(name, ...) \
+#define _OPEN_VA(...) __VA_ARGS__
+#define _INTERFACE(name, inherit, ...) \
 class name; \
-struct _iface_##name { \
+struct _iface_##name _OPEN_VA inherit { \
 using _ = name; \
 static constexpr int _iface_begin = __COUNTER__ + 1 - bases_count<__VA_ARGS__>; \
-}; class name : private _iface_##name
+}; class name : public _iface_##name
 
-
-#define INTERFACE_1(name, base1) \
-    INTERFACE(name, base1), public base1
+#define INTERFACE(name) _INTERFACE(name, ())
+#define INTERFACE_1(name, base) _INTERFACE(name, (: public base), base)
 
 /* these */ // parts are written by user outside of the macro
 
@@ -51,20 +51,12 @@ virtual ret name /*(args...) = 0*/
 
 ////////////////////// TEST!
 
-struct A {
-    static void kek(int);
-};
-
-struct B : A{
-    static void kek(char);
-};
-
 INTERFACE(Base) {
 public:
     METHOD(void, x)() = 0;
 };
 
-INTERFACE(Test) {
+INTERFACE_1(Test, Base) {
 public:
     METHOD(void, foo)(int myIntArg) = 0;
     METHOD(bool, bar)(bool myArg1, int myArg2) = 0;
